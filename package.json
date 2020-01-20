@@ -26,6 +26,7 @@
     "@nestjs/mongoose": "6.2.1",
     "@nestjs/passport": "6.1.1",
     "@nestjs/platform-express": "6.10.14",
+    "bcrypt": "^3.0.7",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "5.8.9",
     "passport": "0.4.1",

@@ -6,9 +6,11 @@ import {CatsService} from './cats.service';
 
 @Module({
   imports: [
-    DatabaseModule,
+    DatabaseModule
   ],
-  controllers: [CatsController],
+  controllers: [
+    CatsController
+  ],
   providers: [
     CatsService,
     ...catsProviders,
