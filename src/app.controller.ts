@@ -15,7 +15,6 @@ export class AppController {
     return req.user;
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('hello')
   hello(@Request() req) {
     return this.appService.getHello();

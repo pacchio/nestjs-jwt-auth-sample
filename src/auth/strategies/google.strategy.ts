@@ -20,8 +20,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
     async validate(request: Request, accessToken: string, refreshToken: string, profile, done: VerifyCallback) {
         try {
-            console.log('profile', profile);
-
             const jwt: string = await this.authService.validateOAuthLogin(profile.id, Provider.GOOGLE);
             const user = {
                 jwt,
@@ -30,7 +28,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
                 email: profile._json.email,
                 locale: profile._json.locale,
             };
-
             done(null, user);
         } catch (err) {
             console.log(err);

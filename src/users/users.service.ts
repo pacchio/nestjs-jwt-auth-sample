@@ -1,7 +1,8 @@
 import {Inject, Injectable} from '@nestjs/common';
-import {Model} from 'mongoose';
-import {CreateUserDto} from './dto/create-user.dto';
-import {User} from './user.interface';
+import {CreateUserDto} from "./dto/create-user.dto";
+import {Model} from "mongoose";
+
+export type User = any;
 
 @Injectable()
 export class UsersService {
@@ -16,7 +17,7 @@ export class UsersService {
     return await createdUser.save();
   }
 
-  async findOneByEmail(email): Promise<User> {
-    return this.userModel.findOne({email});
+  async findOneByUsername(username): Promise<User> {
+    return this.userModel.findOne({username});
   }
 }
