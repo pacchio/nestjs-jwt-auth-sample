@@ -1,27 +1,41 @@
-import {Inject, Injectable} from '@nestjs/common';
+import {HttpException, HttpStatus, Inject, Injectable} from '@nestjs/common';
 import {CreateUserDto} from "./dto/create-user.dto";
 import {Model} from "mongoose";
+import * as bcrypt from 'bcrypt';
+import {User} from "./interfaces/user.interface";
 
-export type User = any;
+const saltRounds = 10;
 
 @Injectable()
 export class UsersService {
 
   constructor(
-    @Inject('USER_MODEL')
-    private userModel: Model<User>
+    @Inject('USER_MODEL') private userModel: Model<User>
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    const createdUser = new this.userModel(createUserDto);
-    return await createdUser.save();
+  async create(newUser: CreateUserDto): Promise<User> {
+    if(this.isValidEmail(newUser.email)){
+      let userRegistered = await this.findOneByUsernameOrEmail(newUser.email);
+      if(!userRegistered) {
+        newUser.password = await bcrypt.hash(newUser.password, saltRounds);
+        let createdUser = new this.userModel(newUser);
+        createdUser.roles = ["User"];
+        return await createdUser.save();
+      } else if (!userRegistered.auth.email.valid) {
+        return userRegistered;
+      } else {
+        throw new HttpException('Utente già registrato', HttpStatus.FORBIDDEN);
+      }
+    } else {
+      throw new HttpException('Email non valida', HttpStatus.FORBIDDEN);
+    }
   }
 
-  async findAll(): Promise<User> {
+  async findAll(): Promise<User[]> {
     return this.userModel.find();
   }
 
-  async findOneByUsernameOrEmail(query): Promise<User> {
+  async findOneByUsernameOrEmail(query: string): Promise<User> {
     return new Promise((resolve) => {
       let resultSearchByUsername = this.userModel.findOne({username: query});
       resultSearchByUsername.then(
@@ -35,6 +49,27 @@ export class UsersService {
           }
       );
     });
+  }
+
+  isValidEmail (email : string){
+    if(email){
+      let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      return re.test(email);
+    } else return false
+  }
+
+  async checkPassword(passwordFromDb: string, password: string){
+    return await bcrypt.compare(password, passwordFromDb);
+  }
+
+  async setPassword(email: string, newPassword: string): Promise<boolean> {
+    let userFromDb = await this.userModel.findOne({email});
+    if(!userFromDb) throw new HttpException('Utente non trovato', HttpStatus.INTERNAL_SERVER_ERROR);
+
+    userFromDb.password = await bcrypt.hash(newPassword, saltRounds);
+
+    await userFromDb.save();
+    return true;
   }
 
 }

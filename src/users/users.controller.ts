@@ -1,5 +1,4 @@
-import {Body, Controller, Param, Post, Query} from '@nestjs/common';
-import {CreateUserDto} from './dto/create-user.dto';
+import {Controller, Param, Post} from '@nestjs/common';
 import {UsersService} from './users.service';
 import {ApiParam} from "@nestjs/swagger";
 
@@ -9,11 +8,6 @@ export class UsersController {
     constructor(
       private usersService: UsersService
     ) {}
-
-    @Post('register')
-    async create(@Body() createUserDto: CreateUserDto) {
-        return await this.usersService.create(createUserDto);
-    }
 
     @Post('get-all')
     async getAll() {

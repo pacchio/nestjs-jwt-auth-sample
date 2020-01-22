@@ -1,10 +1,10 @@
 import * as mongoose from 'mongoose';
-import {Constants} from '../constants';
+import {default as config} from '../config';
 
 export const databaseProviders = [
   {
     provide: 'DATABASE_CONNECTION',
     useFactory: (): Promise<typeof mongoose> =>
-      mongoose.connect(Constants.mongoDbUrl),
+      mongoose.connect(config.mongoDbUrl),
   },
 ];
