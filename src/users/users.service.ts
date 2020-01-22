@@ -17,7 +17,24 @@ export class UsersService {
     return await createdUser.save();
   }
 
-  async findOneByUsername(username): Promise<User> {
-    return this.userModel.findOne({username});
+  async findAll(): Promise<User> {
+    return this.userModel.find();
   }
+
+  async findOneByUsernameOrEmail(query): Promise<User> {
+    return new Promise((resolve) => {
+      let resultSearchByUsername = this.userModel.findOne({username: query});
+      resultSearchByUsername.then(
+          user => {
+            if (user) {
+              resolve(user);
+            } else {
+              const resultSearchByEmail = this.userModel.findOne({email: query});
+              resolve(resultSearchByEmail);
+            }
+          }
+      );
+    });
+  }
+
 }

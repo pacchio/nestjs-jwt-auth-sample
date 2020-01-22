@@ -20,7 +20,7 @@ export class AuthService {
     }
 
     async validateUser(loginAttempt: LoginUserDto): Promise<any> {
-        const userToAttempt = await this.usersService.findOneByUsername(loginAttempt.username);
+        const userToAttempt = await this.usersService.findOneByUsernameOrEmail(loginAttempt.username);
 
         return new Promise((resolve) => {
             // @ts-ignore
