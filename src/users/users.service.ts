@@ -3,6 +3,7 @@ import {CreateUserDto} from "./dto/create-user.dto";
 import {Model} from "mongoose";
 import * as bcrypt from 'bcrypt';
 import {User} from "./interfaces/user.interface";
+import {GoogleUser, GoogleUserRawObject} from "../auth/interfaces/google-user.interface";
 
 const saltRounds = 10;
 
@@ -14,21 +15,53 @@ export class UsersService {
   ) {}
 
   async create(newUser: CreateUserDto): Promise<User> {
-    if(this.isValidEmail(newUser.email)){
-      let userRegistered = await this.findOneByUsernameOrEmail(newUser.email);
-      if(!userRegistered) {
-        newUser.password = await bcrypt.hash(newUser.password, saltRounds);
-        let createdUser = new this.userModel(newUser);
-        createdUser.roles = ["User"];
-        return await createdUser.save();
-      } else if (!userRegistered.auth.email.valid) {
-        return userRegistered;
+    if (this.isValidPassword(newUser.password)) {
+      if (this.isValidEmail(newUser.email)) {
+        let userRegistered = await this.findOneByUsernameOrEmail(newUser.email);
+        if(!userRegistered) {
+          newUser.password = await bcrypt.hash(newUser.password, saltRounds);
+          let createdUser = new this.userModel(newUser);
+          createdUser.roles = ["User"];
+          return await createdUser.save();
+        } else if (!userRegistered.auth.email.valid) {
+          return userRegistered;
+        } else {
+          throw new HttpException('Utente già registrato', HttpStatus.FORBIDDEN);
+        }
       } else {
-        throw new HttpException('Utente già registrato', HttpStatus.FORBIDDEN);
+        throw new HttpException('Email non valida', HttpStatus.FORBIDDEN);
       }
     } else {
-      throw new HttpException('Email non valida', HttpStatus.FORBIDDEN);
+      throw new HttpException('Password non valida', HttpStatus.FORBIDDEN);
     }
+  }
+
+  async createOAuthUser(profile: GoogleUser) {
+      let userRawObject = JSON.parse(profile._raw) as GoogleUserRawObject;
+      let userRegistered = await this.findOneByUsernameOrEmail(userRawObject.email);
+      if(!userRegistered) {
+        let user = {
+          name: profile.name.givenName,
+          surname: profile.name.familyName,
+          username: profile.displayName,
+          email: userRawObject.email,
+          roles: ["User"],
+        } as User;
+        let createdUser = new this.userModel(user);
+        createdUser.auth = {
+          email: {valid: true},
+          google: {userid: profile.id},
+          facebook: {userid: ''}
+        };
+        return await createdUser.save();
+      } else {
+        userRegistered.auth = {
+          email: {valid: true},
+          google: {userid: profile.id},
+          facebook: {userid: userRegistered.auth.facebook.userid}
+        };
+        return await userRegistered.save();
+      }
   }
 
   async findAll(): Promise<User[]> {
@@ -56,6 +89,10 @@ export class UsersService {
       let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
       return re.test(email);
     } else return false
+  }
+
+  isValidPassword (password : string){
+    return !!password;
   }
 
   async checkPassword(passwordFromDb: string, password: string){

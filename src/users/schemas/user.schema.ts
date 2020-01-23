@@ -14,8 +14,7 @@ export const UserSchema = new mongoose.Schema({
         required: true
     },
     password: {
-        type: String,
-        required: true
+        type: String
     },
     roles: Array<String>(),
     auth: {
@@ -25,7 +24,7 @@ export const UserSchema = new mongoose.Schema({
         facebook: {
             userid: String
         },
-        gmail: {
+        google: {
             userid: String
         }
     },

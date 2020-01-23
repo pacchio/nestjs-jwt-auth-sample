@@ -14,7 +14,7 @@ export interface User extends Document {
         facebook: {
             userid: string
         },
-        gmail: {
+        google: {
             userid: string
         }
     };

@@ -19,6 +19,7 @@ import * as nodemailer from 'nodemailer';
 import {default as config} from '../config';
 import {User} from "../users/interfaces/user.interface";
 import * as bcrypt from 'bcrypt';
+import {GoogleUser} from "./interfaces/google-user.interface";
 
 export enum Provider {
     GOOGLE = 'google'
@@ -63,17 +64,12 @@ export class AuthService {
         return {token: jwt};
     }
 
-    async validateOAuthLogin(thirdPartyId: string, provider: Provider): Promise<string> {
+    async validateOAuthLogin(profile: GoogleUser, provider: Provider): Promise<string> {
         try {
-            // You can add some registration logic here,
-            // to register the user using their thirdPartyId (in this case their googleId)
-            // let user: IUser = await this.usersService.findOneByThirdPartyId(thirdPartyId, provider);
-
-            // if (!user)
-            // user = await this.usersService.registerOAuthUser(thirdPartyId, provider);
+            await this.usersService.createOAuthUser(profile);
 
             const payload = {
-                thirdPartyId,
+                thirdPartyId: profile.id,
                 provider
             };
 
