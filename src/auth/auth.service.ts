@@ -88,16 +88,20 @@ export class AuthService {
 
     async createEmailToken(email: string): Promise<boolean> {
         let emailVerification = await this.emailVerificationModel.findOne({email});
-        let emailVerificationModel = await this.emailVerificationModel.findOneAndUpdate(
-            {email: email},
-            {
-                email: email,
-                emailToken: Math.floor(Math.random() * (9000000)) + 1000000, //Generate 7 digits number
-                timestamp: new Date()
-            },
-            {upsert: true}
-        );
-        return true;
+        if (emailVerification && ( (new Date().getTime() - emailVerification.timestamp.getTime()) / 60000 < 15 )){
+            throw new HttpException('Email già inviata recentemente', HttpStatus.INTERNAL_SERVER_ERROR);
+        } else {
+            let emailVerificationModel = await this.emailVerificationModel.findOneAndUpdate(
+                {email: email},
+                {
+                    email: email,
+                    emailToken: Math.floor(Math.random() * (9000000)) + 1000000, //Generate 7 digits number
+                    timestamp: new Date()
+                },
+                {upsert: true}
+            );
+            return true;
+        }
     }
 
     async saveUserConsent(email: string): Promise<ConsentRegistry> {
@@ -217,8 +221,9 @@ export class AuthService {
                 to: email, // list of receivers (separated by ,)
                 subject: 'Frogotten Password',
                 text: 'Forgot Password',
-                html: 'Hi! <br><br> If you requested to reset your password<br><br>' +
-                    '<a href=' + config.host.url + ':' + config.host.port + '/auth/email/reset-password/' + tokenModel.newPasswordToken + '>Click here</a>'  // html body
+                html: 'Hi! <br><br>You requested to reset your password' +
+                    '<br><br> Your token is: ' + tokenModel.newPasswordToken // html body
+                    // '<a href=' + config.host.url + ':' + config.host.port + '/auth/email/reset-password/' + tokenModel.newPasswordToken + '>Click here</a>'  // html body
             };
 
             return await new Promise<boolean>(async function (resolve, reject) {

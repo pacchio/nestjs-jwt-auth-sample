@@ -90,7 +90,7 @@ export class AuthController {
     public async sendEmailForgotPassword(@Param() params): Promise<any> {
         try {
             let isEmailSent = await this.authService.sendEmailForgotPassword(params.email);
-            return isEmailSent ? {message: "Email inviata nuovamente"} : {message: "Errore durante l'invio della mail"};
+            return isEmailSent ? {message: "Email per il cambio della password inviata"} : {message: "Errore durante l'invio della mail"};
         } catch(error) {
             return {error, message: "Errore durante l'invio della mail"};
         }
