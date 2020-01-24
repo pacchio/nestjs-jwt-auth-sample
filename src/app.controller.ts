@@ -1,7 +1,9 @@
 import {Controller, Get, Request, UseGuards} from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport';
 import {AppService} from './app.service';
+import {ApiTags} from "@nestjs/swagger";
 
+@ApiTags("Default")
 @Controller()
 export class AppController {
 

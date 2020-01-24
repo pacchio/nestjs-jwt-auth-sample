@@ -3,8 +3,9 @@ import {AuthGuard} from '@nestjs/passport';
 import {CatsService} from './cats.service';
 import {CreateCatDto} from "./dto/create-cat.dto";
 import {Cat} from "./interfaces/cat.interface";
-import {ApiHeader} from "@nestjs/swagger";
+import {ApiHeader, ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Cats')
 @ApiHeader({
   name: 'Authorization',
   description: 'Auth token',

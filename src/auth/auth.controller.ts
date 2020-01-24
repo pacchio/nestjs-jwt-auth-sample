@@ -19,8 +19,9 @@ import {CreateUserDto} from "../users/dto/create-user.dto";
 import {UsersService} from "../users/users.service";
 import {User} from "../users/interfaces/user.interface";
 import {ResetPasswordDto} from "./dto/reset-password.dto";
-import {ApiParam} from "@nestjs/swagger";
+import {ApiParam, ApiTags} from "@nestjs/swagger";
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
 

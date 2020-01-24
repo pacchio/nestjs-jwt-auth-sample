@@ -1,7 +1,9 @@
-import {Controller, Param, Post} from '@nestjs/common';
+import {Controller, Param, Post, UseGuards} from '@nestjs/common';
 import {UsersService} from './users.service';
-import {ApiParam} from "@nestjs/swagger";
+import {ApiParam, ApiTags} from "@nestjs/swagger";
+import {AuthGuard} from "@nestjs/passport";
 
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
 
@@ -9,11 +11,13 @@ export class UsersController {
       private usersService: UsersService
     ) {}
 
+    @UseGuards(AuthGuard('jwt'))
     @Post('get-all')
     async getAll() {
         return await this.usersService.findAll();
     }
 
+    @UseGuards(AuthGuard('jwt'))
     @ApiParam({name: 'username'})
     @Post('get-user/:username')
     async getByUsername(@Param() params) {
