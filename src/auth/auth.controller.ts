@@ -14,12 +14,12 @@ import {
 import {AuthGuard} from '@nestjs/passport';
 import {Response as Res} from 'express';
 import {AuthService} from './auth.service';
-import {LoginUserDto} from "./dto/login-user.dto";
-import {CreateUserDto} from "../users/dto/create-user.dto";
-import {UsersService} from "../users/users.service";
-import {User} from "../users/interfaces/user.interface";
-import {ResetPasswordDto} from "./dto/reset-password.dto";
-import {ApiParam, ApiTags} from "@nestjs/swagger";
+import {LoginUserDto} from './dto/login-user.dto';
+import {CreateUserDto} from '../users/dto/create-user.dto';
+import {UsersService} from '../users/users.service';
+import {User} from '../users/interfaces/user.interface';
+import {ResetPasswordDto} from './dto/reset-password.dto';
+import {ApiParam, ApiTags} from '@nestjs/swagger';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -43,22 +43,22 @@ export class AuthController {
     @UseGuards(AuthGuard('google'))
     @Get('google/callback')
     googleCallback(@Request() req, @Response() res: Res) {
-        if(req.user.jwt) {
+        if (req.user.jwt) {
             res.send({message: 'Authentication success', ...req.user});
         } else {
-            res.send({message: 'Authentication fail'})
+            res.send({message: 'Authentication fail'});
         }
     }
 
     @Post('register')
     async create(@Body() createUserDto: CreateUserDto) {
         try {
-            let newUser: User = await this.userService.create(createUserDto);
+            const newUser: User = await this.userService.create(createUserDto);
             await this.authService.createEmailToken(newUser.email);
             await this.authService.saveUserConsent(newUser.email);
-            let sent = await this.authService.sendEmailVerification(newUser.email);
+            const sent = await this.authService.sendEmailVerification(newUser.email);
             return sent ? newUser : {message: 'Errore durante la registrazione'};
-        } catch(error){
+        } catch (error) {
             return {error, message: 'Errore durante la registrazione'};
         }
     }
@@ -67,9 +67,9 @@ export class AuthController {
     @Get('email/verify/:token')
     public async verifyEmail(@Param() params): Promise<any> {
         try {
-            let isEmailVerified = await this.authService.verifyEmail(params.token);
+            const isEmailVerified = await this.authService.verifyEmail(params.token);
             return {isEmailVerified};
-        } catch(error) {
+        } catch (error) {
             return {error, message: 'Errore durante la verifica della mail'};
         }
     }
@@ -79,10 +79,10 @@ export class AuthController {
     public async sendEmailVerification(@Param() params): Promise<any> {
         try {
             await this.authService.createEmailToken(params.email);
-            let isEmailSent = await this.authService.sendEmailVerification(params.email);
-            return isEmailSent ? {message: "Email inviata nuovamente"} : {message: "Errore durante l'invio della mail"};
-        } catch(error) {
-            return {error, message: "Errore durante l'invio della mail"};
+            const isEmailSent = await this.authService.sendEmailVerification(params.email);
+            return isEmailSent ? {message: 'Email inviata nuovamente'} : {message: 'Errore durante l\'invio della mail'};
+        } catch (error) {
+            return {error, message: 'Errore durante l\'invio della mail'};
         }
     }
 
@@ -90,10 +90,10 @@ export class AuthController {
     @Get('email/forgot-password/:email')
     public async sendEmailForgotPassword(@Param() params): Promise<any> {
         try {
-            let isEmailSent = await this.authService.sendEmailForgotPassword(params.email);
-            return isEmailSent ? {message: "Email per il cambio della password inviata"} : {message: "Errore durante l'invio della mail"};
-        } catch(error) {
-            return {error, message: "Errore durante l'invio della mail"};
+            const isEmailSent = await this.authService.sendEmailForgotPassword(params.email);
+            return isEmailSent ? {message: 'Email per il cambio della password inviata'} : {message: 'Errore durante l\'invio della mail'};
+        } catch (error) {
+            return {error, message: 'Errore durante l\'invio della mail'};
         }
     }
 
@@ -101,28 +101,28 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     public async setNewPassord(@Body() resetPassword: ResetPasswordDto): Promise<any> {
         try {
-            let isNewPasswordChanged : boolean = false;
-            if(resetPassword.email && resetPassword.currentPassword){
-                let user = await this.userService.findOneByUsernameOrEmail(resetPassword.email);
-                if(!user) {
+            let isNewPasswordChanged: boolean = false;
+            if (resetPassword.email && resetPassword.currentPassword) {
+                const user = await this.userService.findOneByUsernameOrEmail(resetPassword.email);
+                if (!user) {
                     return new HttpException('Utente non trovato', HttpStatus.INTERNAL_SERVER_ERROR);
                 }
-                let isValidPassword = await this.userService.checkPassword(user.password, resetPassword.currentPassword);
-                if(isValidPassword) {
+                const isValidPassword = await this.userService.checkPassword(user.password, resetPassword.currentPassword);
+                if (isValidPassword) {
                     isNewPasswordChanged = await this.userService.setPassword(resetPassword.email, resetPassword.newPassword);
                 } else {
-                    return {message: "Errore durante l'aggiornamento della password"};
+                    return {message: 'Errore durante l\'aggiornamento della password'};
                 }
             } else if (resetPassword.newPasswordToken) {
-                let forgottenPasswordModel = await this.authService.getForgottenPasswordModel(resetPassword.newPasswordToken);
+                const forgottenPasswordModel = await this.authService.getForgottenPasswordModel(resetPassword.newPasswordToken);
                 isNewPasswordChanged = await this.userService.setPassword(forgottenPasswordModel.email, resetPassword.newPassword);
-                if(isNewPasswordChanged) await forgottenPasswordModel.remove();
+                if (isNewPasswordChanged) { await forgottenPasswordModel.remove(); }
             } else {
-                return {message: "Errore durante l'aggiornamento della password"};
+                return {message: 'Errore durante l\'aggiornamento della password'};
             }
-            return {isNewPasswordChanged, message: "Password aggiornata"};
-        } catch(error) {
-            return {error, message: "Errore durante l'aggiornamento della password"};
+            return {isNewPasswordChanged, message: 'Password aggiornata'};
+        } catch (error) {
+            return {error, message: 'Errore durante l\'aggiornamento della password'};
         }
     }
 }

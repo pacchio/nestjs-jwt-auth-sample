@@ -7,19 +7,18 @@ import {
     UnauthorizedException
 } from '@nestjs/common';
 import {JwtService} from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import {sign} from 'jsonwebtoken';
-import {LoginUserDto} from './dto/login-user.dto';
-import {UsersService} from '../users/users.service';
-import {JwtPayload} from './interfaces/jwt-payload.interface';
-import {Model} from "mongoose";
-import {EmailVerification} from "./interfaces/emailverification.interface";
-import {ForgottenPassword} from "./interfaces/forgottenpassword.interface";
-import {ConsentRegistry} from "./interfaces/consentregistry.interface";
+import {Model} from 'mongoose';
 import * as nodemailer from 'nodemailer';
 import {default as config} from '../config';
-import {User} from "../users/interfaces/user.interface";
-import * as bcrypt from 'bcrypt';
-import {GoogleUser} from "./interfaces/google-user.interface";
+import {UsersService} from '../users/users.service';
+import {LoginUserDto} from './dto/login-user.dto';
+import {ConsentRegistry} from './interfaces/consentregistry.interface';
+import {EmailVerification} from './interfaces/emailverification.interface';
+import {ForgottenPassword} from './interfaces/forgottenpassword.interface';
+import {GoogleUser} from './interfaces/google-user.interface';
+import {JwtPayload} from './interfaces/jwt-payload.interface';
 
 export enum Provider {
     GOOGLE = 'google'
@@ -49,12 +48,12 @@ export class AuthService {
             bcrypt.compare(loginAttempt.password, userToAttempt.password).then(
                 isValidPass => {
                     if (isValidPass) {
-                        resolve(this.createJwtPayload(userToAttempt))
+                        resolve(this.createJwtPayload(userToAttempt));
                     } else {
                         reject(new UnauthorizedException());
                     }
                 }
-            )
+            );
         });
     }
 
@@ -87,15 +86,15 @@ export class AuthService {
     }
 
     async createEmailToken(email: string): Promise<boolean> {
-        let emailVerification = await this.emailVerificationModel.findOne({email});
-        if (emailVerification && ( (new Date().getTime() - emailVerification.timestamp.getTime()) / 60000 < 15 )){
+        const emailVerification = await this.emailVerificationModel.findOne({email});
+        if (emailVerification && ( (new Date().getTime() - emailVerification.timestamp.getTime()) / 60000 < 15 )) {
             throw new HttpException('Email già inviata recentemente', HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
-            let emailVerificationModel = await this.emailVerificationModel.findOneAndUpdate(
-                {email: email},
+            const emailVerificationModel = await this.emailVerificationModel.findOneAndUpdate(
+                {email},
                 {
-                    email: email,
-                    emailToken: Math.floor(Math.random() * (9000000)) + 1000000, //Generate 7 digits number
+                    email,
+                    emailToken: Math.floor(Math.random() * (9000000)) + 1000000, // Generate 7 digits number
                     timestamp: new Date()
                 },
                 {upsert: true}
@@ -106,30 +105,30 @@ export class AuthService {
 
     async saveUserConsent(email: string): Promise<ConsentRegistry> {
         try {
-            let newConsent = new this.consentRegistryModel();
+            const newConsent = new this.consentRegistryModel();
             newConsent.email = email;
             newConsent.date = new Date();
-            newConsent.registrationForm = ["name", "surname", "email", "birthday date", "password"];
-            newConsent.checkboxText = "I accept privacy policy";
-            newConsent.privacyPolicy = "privacy policy";
-            newConsent.cookiePolicy = "cookie policy";
-            newConsent.acceptedPolicy = "Y";
+            newConsent.registrationForm = ['name', 'surname', 'email', 'birthday date', 'password'];
+            newConsent.checkboxText = 'I accept privacy policy';
+            newConsent.privacyPolicy = 'privacy policy';
+            newConsent.cookiePolicy = 'cookie policy';
+            newConsent.acceptedPolicy = 'Y';
             return await newConsent.save();
         } catch (error) {
-            console.error(error)
+            console.error(error);
         }
     }
 
     async createForgottenPasswordToken(email: string): Promise<ForgottenPassword> {
-        let forgottenPassword = await this.forgottenPasswordModel.findOne({email: email});
+        const forgottenPassword = await this.forgottenPasswordModel.findOne({email});
         if (forgottenPassword && ((new Date().getTime() - forgottenPassword.timestamp.getTime()) / 60000 < 15)) {
             throw new HttpException('RESET_PASSWORD.EMAIL_SENDED_RECENTLY', HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
-            let forgottenPasswordModel = await this.forgottenPasswordModel.findOneAndUpdate(
-                {email: email},
+            const forgottenPasswordModel = await this.forgottenPasswordModel.findOneAndUpdate(
+                {email},
                 {
-                    email: email,
-                    newPasswordToken: Math.floor(Math.random() * (9000000)) + 1000000, //Generate 7 digits number,
+                    email,
+                    newPasswordToken: Math.floor(Math.random() * (9000000)) + 1000000, // Generate 7 digits number,
                     timestamp: new Date()
                 },
                 {upsert: true, new: true}
@@ -143,12 +142,12 @@ export class AuthService {
     }
 
     async verifyEmail(token: string): Promise<boolean> {
-        let emailVerif = await this.emailVerificationModel.findOne({emailToken: token});
+        const emailVerif = await this.emailVerificationModel.findOne({emailToken: token});
         if (emailVerif && emailVerif.email) {
-            let userFromDb = await this.usersService.findOneByUsernameOrEmail(emailVerif.email);
+            const userFromDb = await this.usersService.findOneByUsernameOrEmail(emailVerif.email);
             if (userFromDb) {
                 userFromDb.auth.email.valid = true;
-                let savedUser = await userFromDb.save();
+                const savedUser = await userFromDb.save();
                 await emailVerif.remove();
                 return !!savedUser;
             }
@@ -158,14 +157,14 @@ export class AuthService {
     }
 
     async getForgottenPasswordModel(newPasswordToken: string): Promise<ForgottenPassword> {
-        return this.forgottenPasswordModel.findOne({newPasswordToken: newPasswordToken});
+        return this.forgottenPasswordModel.findOne({newPasswordToken});
     }
 
     async sendEmailVerification(email: string): Promise<boolean> {
-        let model = await this.emailVerificationModel.findOne({email});
+        const model = await this.emailVerificationModel.findOne({email});
 
         if (model && model.emailToken) {
-            let transporter = nodemailer.createTransport({
+            const transporter = nodemailer.createTransport({
                 host: config.mail.host,
                 port: config.mail.port,
                 secure: config.mail.secure, // true for 465, false for other ports
@@ -175,7 +174,7 @@ export class AuthService {
                 }
             });
 
-            let mailOptions = {
+            const mailOptions = {
                 from: 'no-reply@andreapacchioni.it',
                 to: email, // list of receivers (separated by ,)
                 subject: 'Verify Email',
@@ -184,7 +183,8 @@ export class AuthService {
                     '<a href=' + config.host.url + ':' + config.host.port + '/auth/email/verify/' + model.emailToken + '>Click here to activate your account</a>'  // html body
             };
 
-            return await new Promise<boolean>(async function (resolve, reject) {
+            // tslint:disable-next-line:only-arrow-functions
+            return await new Promise<boolean>(async function(resolve, reject) {
                 return await transporter.sendMail(mailOptions, async (error, info) => {
                     if (error) {
                         console.log('Message sent: %s', error);
@@ -200,13 +200,13 @@ export class AuthService {
     }
 
     async sendEmailForgotPassword(email: string): Promise<boolean> {
-        let userFromDb = await this.usersService.findOneByUsernameOrEmail(email);
-        if (!userFromDb) throw new HttpException('LOGIN.USER_NOT_FOUND', HttpStatus.NOT_FOUND);
+        const userFromDb = await this.usersService.findOneByUsernameOrEmail(email);
+        if (!userFromDb) { throw new HttpException('LOGIN.USER_NOT_FOUND', HttpStatus.NOT_FOUND); }
 
-        let tokenModel = await this.createForgottenPasswordToken(email);
+        const tokenModel = await this.createForgottenPasswordToken(email);
 
         if (tokenModel && tokenModel.newPasswordToken) {
-            let transporter = nodemailer.createTransport({
+            const transporter = nodemailer.createTransport({
                 host: config.mail.host,
                 port: config.mail.port,
                 secure: config.mail.secure, // true for 465, false for other ports
@@ -216,17 +216,19 @@ export class AuthService {
                 }
             });
 
-            let mailOptions = {
+            const mailOptions = {
                 from: '"Company" <' + config.mail.user + '>',
                 to: email, // list of receivers (separated by ,)
                 subject: 'Frogotten Password',
                 text: 'Forgot Password',
                 html: 'Hi! <br><br>You requested to reset your password' +
                     '<br><br> Your token is: ' + tokenModel.newPasswordToken // html body
-                    // '<a href=' + config.host.url + ':' + config.host.port + '/auth/email/reset-password/' + tokenModel.newPasswordToken + '>Click here</a>'  // html body
+                    // '<a href=' + config.host.url + ':' + config.host.port + '/auth/email/reset-password/'
+                    // + tokenModel.newPasswordToken + '>Click here</a>'  // html body
             };
 
-            return await new Promise<boolean>(async function (resolve, reject) {
+            // tslint:disable-next-line:only-arrow-functions
+            return await new Promise<boolean>(async function(resolve, reject) {
                 return await transporter.sendMail(mailOptions, async (error, info) => {
                     if (error) {
                         console.log('Message sent: %s', error);

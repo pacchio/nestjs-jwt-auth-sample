@@ -1,7 +1,7 @@
 import {Connection} from 'mongoose';
-import {EmailVerificationSchema} from "./schemas/emailverification.schema";
-import {ForgottenPasswordSchema} from "./schemas/forgottenpassword.schema";
-import {ConsentRegistrySchema} from "./schemas/consentregistry.schema";
+import {EmailVerificationSchema} from './schemas/emailverification.schema';
+import {ForgottenPasswordSchema} from './schemas/forgottenpassword.schema';
+import {ConsentRegistrySchema} from './schemas/consentregistry.schema';
 
 export const authProviders = [
   {

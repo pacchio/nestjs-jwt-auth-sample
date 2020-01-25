@@ -5,11 +5,11 @@ import {JwtStrategy} from './strategies/jwt.strategy';
 import {UsersModule} from '../users/users.module';
 import {PassportModule} from '@nestjs/passport';
 import {JwtModule} from '@nestjs/jwt';
-import {AuthController} from "./auth.controller";
-import {GoogleStrategy} from "./strategies/google.strategy";
+import {AuthController} from './auth.controller';
+import {GoogleStrategy} from './strategies/google.strategy';
 import {default as config} from '../config';
-import {authProviders} from "./auth.provider";
-import {DatabaseModule} from "../database/database.module";
+import {authProviders} from './auth.provider';
+import {DatabaseModule} from '../database/database.module';
 
 @Module({
     imports: [
