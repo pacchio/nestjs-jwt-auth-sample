@@ -12,14 +12,14 @@ import {
     UseGuards
 } from '@nestjs/common';
 import {AuthGuard} from '@nestjs/passport';
+import {ApiParam, ApiTags} from '@nestjs/swagger';
 import {Response as Res} from 'express';
+import {CreateUserDto} from '../users/dto/create-user.dto';
+import {UserInfo} from '../users/interfaces/user-info.interface';
+import {UsersService} from '../users/users.service';
 import {AuthService} from './auth.service';
 import {LoginUserDto} from './dto/login-user.dto';
-import {CreateUserDto} from '../users/dto/create-user.dto';
-import {UsersService} from '../users/users.service';
-import {User} from '../users/interfaces/user.interface';
 import {ResetPasswordDto} from './dto/reset-password.dto';
-import {ApiParam, ApiTags} from '@nestjs/swagger';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -33,7 +33,7 @@ export class AuthController {
     @UseGuards(AuthGuard('local'))
     @Post('login')
     async login(@Request() req, @Body() loginUserDto: LoginUserDto) {
-        return this.authService.login(req.user);
+        return req.user;
     }
 
     @UseGuards(AuthGuard('google'))
@@ -53,7 +53,7 @@ export class AuthController {
     @Post('register')
     async create(@Body() createUserDto: CreateUserDto) {
         try {
-            const newUser: User = await this.userService.create(createUserDto);
+            const newUser: UserInfo = await this.userService.create(createUserDto);
             await this.authService.createEmailToken(newUser.email);
             await this.authService.saveUserConsent(newUser.email);
             const sent = await this.authService.sendEmailVerification(newUser.email);

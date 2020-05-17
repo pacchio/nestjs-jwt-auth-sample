@@ -9,15 +9,16 @@ import {
 import {JwtService} from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import {sign} from 'jsonwebtoken';
-import {Model} from 'mongoose';
+import {Model} from "mongoose";
 import * as nodemailer from 'nodemailer';
 import {default as config} from '../config';
+import {User} from '../users/interfaces/user.interface';
 import {UsersService} from '../users/users.service';
 import {LoginUserDto} from './dto/login-user.dto';
-import {ConsentRegistry} from './interfaces/consentregistry.interface';
-import {EmailVerification} from './interfaces/emailverification.interface';
-import {ForgottenPassword} from './interfaces/forgottenpassword.interface';
-import {GoogleUser} from './interfaces/google-user.interface';
+import {ConsentRegistry} from "./interfaces/consentregistry.interface";
+import {EmailVerification} from "./interfaces/emailverification.interface";
+import {ForgottenPassword} from "./interfaces/forgottenpassword.interface";
+import {GoogleUser} from "./interfaces/google-user.interface";
 import {JwtPayload} from './interfaces/jwt-payload.interface';
 
 export enum Provider {
@@ -39,7 +40,7 @@ export class AuthService {
     async validateUser(loginAttempt: LoginUserDto): Promise<any> {
         const userToAttempt = await this.usersService.findOneByUsernameOrEmail(loginAttempt.username);
         if (!userToAttempt) {
-            throw new HttpException('Utente non trovato', HttpStatus.UNAUTHORIZED);
+            throw new UnauthorizedException('Utente non trovato');
         }
         if (!userToAttempt.auth.email.valid) {
             throw new HttpException('Email non verificata', HttpStatus.UNAUTHORIZED);
@@ -50,14 +51,14 @@ export class AuthService {
                     if (isValidPass) {
                         resolve(this.createJwtPayload(userToAttempt));
                     } else {
-                        reject(new UnauthorizedException());
+                        reject(new UnauthorizedException('Password errata'));
                     }
                 }
             );
         });
     }
 
-    createJwtPayload(user) {
+    createJwtPayload(user: User) {
         const data: JwtPayload = {username: user.username};
         const jwt = this.jwtService.sign(data);
         return {token: jwt};
@@ -66,23 +67,15 @@ export class AuthService {
     async validateOAuthLogin(profile: GoogleUser, provider: Provider): Promise<string> {
         try {
             await this.usersService.createOAuthUser(profile);
-
             const payload = {
+                username: profile.displayName,
                 thirdPartyId: profile.id,
                 provider
             };
-
             return sign(payload, config.secret);
         } catch (err) {
             throw new InternalServerErrorException('validateOAuthLogin', err.message);
         }
-    }
-
-    async login(user: any) {
-        const payload = {username: user.username, sub: user.userId};
-        return {
-            token: this.jwtService.sign(payload),
-        };
     }
 
     async createEmailToken(email: string): Promise<boolean> {
@@ -121,7 +114,8 @@ export class AuthService {
 
     async createForgottenPasswordToken(email: string): Promise<ForgottenPassword> {
         const forgottenPassword = await this.forgottenPasswordModel.findOne({email});
-        if (forgottenPassword && ((new Date().getTime() - forgottenPassword.timestamp.getTime()) / 60000 < 15)) {
+        console.log(forgottenPassword);
+        if (forgottenPassword && ((new Date().getTime() - forgottenPassword.timestamp.getTime()) / 60000 < 8)) {        // 8 minuti
             throw new HttpException('RESET_PASSWORD.EMAIL_SENDED_RECENTLY', HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
             const forgottenPasswordModel = await this.forgottenPasswordModel.findOneAndUpdate(
